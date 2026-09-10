@@ -38,26 +38,21 @@ html.dark input:focus,html.dark select:focus,html.dark textarea:focus { box-shad
 .shadow-sm { box-shadow:0 1px 2px rgba(0,0,0,.04); }
 html.dark .shadow-sm { box-shadow:0 1px 2px rgba(255,255,255,.035); }
 
-/* Interactive controls: quick enough to feel responsive, restrained enough not to look like a casino. */
+/* Interactive controls */
 button,.interactive { transition:transform 160ms cubic-bezier(.2,.8,.2,1),opacity 160ms ease,background-color 160ms ease,box-shadow 180ms ease,border-color 180ms ease; }
 button:not(:disabled):active,.interactive:active { transform:scale(.97); }
 button:not(:disabled):hover { box-shadow:0 6px 18px rgba(0,0,0,.08); }
 html.dark button:not(:disabled):hover { box-shadow:0 6px 18px rgba(255,255,255,.06); }
 
-/* Subtle page/content entrance. Elements only animate when rendered, not continuously. */
-main { animation:degusty-page-in 260ms cubic-bezier(.2,.8,.2,1) both; }
-main > * { animation:degusty-content-in 300ms cubic-bezier(.2,.8,.2,1) both; }
-main > *:nth-child(2) { animation-delay:20ms; }
-main > *:nth-child(3) { animation-delay:35ms; }
-main > *:nth-child(4) { animation-delay:50ms; }
+/* Subtle entrance motion, kept short to preserve the fast dashboard feel. */
+main { animation:degusty-page-in 240ms cubic-bezier(.2,.8,.2,1) both; }
+main > * { animation:degusty-content-in 260ms cubic-bezier(.2,.8,.2,1) both; }
+main > *:nth-child(2) { animation-delay:18ms; }
+main > *:nth-child(3) { animation-delay:32ms; }
+main > *:nth-child(4) { animation-delay:46ms; }
 
-/* Give common cards a tiny lift on interaction without forcing every element to move. */
-article,.card,.rounded-xl,.rounded-2xl { transition:transform 180ms cubic-bezier(.2,.8,.2,1),box-shadow 180ms ease,border-color 180ms ease; }
-article:hover,.card:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,.06); }
-html.dark article:hover,html.dark .card:hover { box-shadow:0 8px 24px rgba(255,255,255,.045); }
-
-@keyframes degusty-page-in { from { opacity:.94; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
-@keyframes degusty-content-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+@keyframes degusty-page-in { from { opacity:.96; transform:translateY(2px); } to { opacity:1; transform:translateY(0); } }
+@keyframes degusty-content-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior:auto; }
