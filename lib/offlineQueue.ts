@@ -29,12 +29,16 @@ export function queueMutation(input: Omit<Pending, "id" | "createdAt">) {
   return item;
 }
 
+export function removeQueuedMutation(queueId: string) {
+  writeQueue(readQueue().filter((item) => item.id !== queueId));
+}
+
 export async function flushPendingMutations() {
   if (typeof window === "undefined" || !navigator.onLine) return;
   const queue = readQueue();
   if (!queue.length) return;
-
   const remaining: Pending[] = [];
+
   for (const item of queue) {
     let error: unknown = null;
     try {
