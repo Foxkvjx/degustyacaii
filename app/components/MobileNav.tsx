@@ -11,10 +11,22 @@ const items = [
   ["/calendario", "Agenda", "▣"],
 ];
 
-export default function MobileNav() {
+type MobileNavProps = {
+  persistent?: boolean;
+};
+
+export default function MobileNav({ persistent = false }: MobileNavProps) {
   const pathname = usePathname();
+
+  // Pages antigas ainda podem importar este componente. A navegação válida
+  // é somente a instância montada pelo layout global.
+  if (!persistent) return null;
+
   return (
-    <nav aria-label="Navegação principal" className="mobile-app-nav fixed inset-x-0 bottom-0 z-[90] border-t border-slate-200/80 bg-white/90 px-2 pt-2 backdrop-blur-xl dark:border-white/10 dark:bg-black/90 sm:hidden">
+    <nav
+      aria-label="Navegação principal"
+      className="mobile-app-nav fixed inset-x-0 bottom-0 z-[90] border-t border-slate-200/80 bg-white/90 px-2 pt-2 backdrop-blur-xl dark:border-white/10 dark:bg-black/90 sm:hidden"
+    >
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1 pb-[max(8px,env(safe-area-inset-bottom))]">
         {items.map(([href, label, icon]) => {
           const active = pathname === href;
