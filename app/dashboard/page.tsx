@@ -49,6 +49,7 @@ export default function Dashboard() {
   });
   const max = Math.max(1, ...lastDays.map(d => d.cups));
 
+  // Keep metric icons explicitly typed so React receives components, not a string/component union.
   const metrics: Metric[] = [
     { label: "Copos", value: loading ? "..." : String(cups), note: "Hoje", Icon: ShoppingBag },
     { label: "Ticket", value: loading ? "..." : money(ticket), note: "Médio", Icon: CircleDollarSign },
