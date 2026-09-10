@@ -51,8 +51,13 @@ main > *:nth-child(2) { animation-delay:18ms; }
 main > *:nth-child(3) { animation-delay:32ms; }
 main > *:nth-child(4) { animation-delay:46ms; }
 
+.degusty-sync-indicator { animation:degusty-sync-in 180ms cubic-bezier(.2,.8,.2,1) both; }
+.degusty-sync-indicator span { animation:degusty-pulse 1.1s ease-in-out infinite; }
+
 @keyframes degusty-page-in { from { opacity:.96; transform:translateY(2px); } to { opacity:1; transform:translateY(0); } }
 @keyframes degusty-content-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@keyframes degusty-sync-in { from { opacity:0; transform:translate(-50%,-5px) scale(.98); } to { opacity:1; transform:translate(-50%,0) scale(1); } }
+@keyframes degusty-pulse { 0%,100% { opacity:.45; transform:scale(.85); } 50% { opacity:1; transform:scale(1.15); } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior:auto; }
