@@ -37,6 +37,7 @@ create policy receita_itens_public_all on public.receita_itens for all to anon, 
 create policy estoque_movimentacoes_public_all on public.estoque_movimentacoes for all to anon, authenticated using (true) with check (true);
 
 update public.produtos set qtd=qtd*1000, unidade='ml', min=min*1000 where lower(nome)='açaí' and unidade='litros';
+update public.produtos set custo=custo/1000 where lower(nome)='açaí' and unidade='ml' and custo>1;
 insert into public.receitas(nome,tipo,preco) values
 ('Açaí 100ml','produto',5),('Açaí 300ml','produto',13),('Açaí 500ml','produto',18),
 ('Banana','complemento',null),('Leite condensado','complemento',null),('Leite em pó','complemento',null)
@@ -50,29 +51,29 @@ with r as(select id from public.receitas where nome='Leite condensado'),p as(sel
 with r as(select id from public.receitas where nome='Leite em pó'),p as(select id from public.produtos where lower(nome)='leite em pó') insert into public.receita_itens(receita_id,insumo_id,quantidade) select r.id,p.id,10 from r,p on conflict(receita_id,insumo_id) do update set quantidade=excluded.quantidade;
 
 create or replace function public.aplicar_consumo_receita(p_venda_id uuid,p_produto text,p_quantidade numeric,p_complementos jsonb,p_sinal numeric,p_origem text)
-returns void language plpgsql security invoker set search_path=public as $$
-declare item record; comp text; rec_id uuid; total numeric;
+returns void language plpgsql security definer set search_path=public as $$
+declare item record; comp text; rec_id uuid; total numeric; produto_receita text;
 begin
- select r.id into rec_id from public.receitas r where r.tipo='produto' and lower(r.nome)=lower(trim(p_produto)) and r.ativo limit 1;
- if rec_id is not null then
-  for item in select ri.insumo_id,ri.quantidade,p.nome from public.receita_itens ri join public.produtos p on p.id=ri.insumo_id where ri.receita_id=rec_id loop
-   total:=item.quantidade*p_quantidade*p_sinal;
-   if p_sinal<0 and (select qtd from public.produtos where id=item.insumo_id)+total < -0.0005 then raise exception 'Estoque insuficiente para %',item.nome; end if;
-   update public.produtos set qtd=qtd+total,updated_at=now() where id=item.insumo_id;
-   insert into public.estoque_movimentacoes(produto_id,quantidade,tipo,origem,venda_id,observacao) values(item.insumo_id,total,case when p_sinal<0 then 'consumo' else 'reversao' end,p_origem,p_venda_id,'Consumo automático pela venda');
-  end loop;
- end if;
+ produto_receita := trim(p_produto);
+ if lower(produto_receita)=lower('Açaí') then produto_receita := 'Açaí 300ml'; end if;
+ select r.id into rec_id from public.receitas r where r.tipo='produto' and lower(trim(r.nome))=lower(produto_receita) and r.ativo=true limit 1;
+ if rec_id is null then raise exception 'Receita não encontrada para o produto: %',p_produto; end if;
+ for item in select ri.insumo_id,ri.quantidade,p.nome from public.receita_itens ri join public.produtos p on p.id=ri.insumo_id where ri.receita_id=rec_id loop
+  total:=item.quantidade*p_quantidade*p_sinal;
+  if p_sinal<0 and (select qtd from public.produtos where id=item.insumo_id)+total < -0.0005 then raise exception 'Estoque insuficiente para %',item.nome; end if;
+  update public.produtos set qtd=qtd+total,updated_at=now() where id=item.insumo_id;
+  insert into public.estoque_movimentacoes(produto_id,quantidade,tipo,origem,venda_id,observacao) values(item.insumo_id,total,case when p_sinal<0 then 'consumo' else 'reversao' end,p_origem,p_venda_id,'Consumo automático pela venda');
+ end loop;
  if jsonb_typeof(coalesce(p_complementos,'[]'::jsonb))='array' then
   for comp in select value from jsonb_array_elements_text(coalesce(p_complementos,'[]'::jsonb)) loop
-   select r.id into rec_id from public.receitas r where r.tipo='complemento' and lower(r.nome)=lower(trim(comp)) and r.ativo limit 1;
-   if rec_id is not null then
-    for item in select ri.insumo_id,ri.quantidade,p.nome from public.receita_itens ri join public.produtos p on p.id=ri.insumo_id where ri.receita_id=rec_id loop
-     total:=item.quantidade*p_quantidade*p_sinal;
-     if p_sinal<0 and (select qtd from public.produtos where id=item.insumo_id)+total < -0.0005 then raise exception 'Estoque insuficiente para %',item.nome; end if;
-     update public.produtos set qtd=qtd+total,updated_at=now() where id=item.insumo_id;
-     insert into public.estoque_movimentacoes(produto_id,quantidade,tipo,origem,venda_id,observacao) values(item.insumo_id,total,case when p_sinal<0 then 'consumo' else 'reversao' end,p_origem,p_venda_id,'Complemento consumido automaticamente pela venda');
-    end loop;
-   end if;
+   select r.id into rec_id from public.receitas r where r.tipo='complemento' and lower(trim(r.nome))=lower(trim(comp)) and r.ativo=true limit 1;
+   if rec_id is null then raise exception 'Receita não encontrada para o complemento: %',comp; end if;
+   for item in select ri.insumo_id,ri.quantidade,p.nome from public.receita_itens ri join public.produtos p on p.id=ri.insumo_id where ri.receita_id=rec_id loop
+    total:=item.quantidade*p_quantidade*p_sinal;
+    if p_sinal<0 and (select qtd from public.produtos where id=item.insumo_id)+total < -0.0005 then raise exception 'Estoque insuficiente para %',item.nome; end if;
+    update public.produtos set qtd=qtd+total,updated_at=now() where id=item.insumo_id;
+    insert into public.estoque_movimentacoes(produto_id,quantidade,tipo,origem,venda_id,observacao) values(item.insumo_id,total,case when p_sinal<0 then 'consumo' else 'reversao' end,p_origem,p_venda_id,'Complemento consumido automaticamente pela venda');
+   end loop;
   end loop;
  end if;
 end; $$;
