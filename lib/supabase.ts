@@ -1,13 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-// The Supabase publishable key is safe for browser use. The fallback keeps
-// production builds from crashing when Vercel has not received the public env
-// variables yet. Vercel env vars should still be configured for deployments.
+// Public Supabase configuration. The fallback prevents Vercel prerendering
+// from failing when NEXT_PUBLIC_* variables are not configured yet.
 const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://zamcnogwjnxqwylltbuj.supabase.co";
 const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "sb_publishable_yjv-2lhYKHsBb_mx5Hh3GA_v0wxyS4U";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
