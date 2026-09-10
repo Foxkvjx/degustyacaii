@@ -3,6 +3,7 @@ import "./globals.css";
 import ThemeToggle from "./components/ThemeToggle";
 import MutationSync from "./components/MutationSync";
 import SyncIndicator from "./components/SyncIndicator";
+import MobileNav from "./components/MobileNav";
 
 export const metadata: Metadata = {
   title: "Degusty Açaí | Controle Operacional",
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <MutationSync />
         <SyncIndicator />
         {children}
+        <MobileNav />
       </body>
     </html>
   );
