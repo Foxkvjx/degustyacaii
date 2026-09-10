@@ -1,0 +1,75 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { supabase } from "../../lib/supabase";
+
+export default function LoginPage() {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function handleGoogle() {
+    setBusy(true);
+    setMessage("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    });
+    if (error) setMessage(error.message);
+    setBusy(false);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage("");
+
+    if (mode === "signup") {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name.trim() } },
+      });
+      if (error) setMessage(error.message);
+      else if (!data.session) setMessage("Conta criada. Confira seu e-mail para confirmar o acesso.");
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMessage("E-mail ou senha inválidos.");
+    }
+    setBusy(false);
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-10 dark:bg-black">
+      <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-zinc-950">
+        <div className="mb-7">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Degusty Açaí</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">{mode === "login" ? "Entrar" : "Criar conta"}</h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Seu controle operacional, separado por conta.</p>
+        </div>
+
+        <button type="button" onClick={handleGoogle} disabled={busy} className="flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold transition hover:bg-slate-50 active:scale-[.99] disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:hover:bg-white/10">
+          Continuar com Google
+        </button>
+
+        <div className="my-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />ou<span className="h-px flex-1 bg-slate-200 dark:bg-white/10" /></div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "signup" && <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Seu nome" className="min-h-12 w-full rounded-xl border border-slate-300 bg-transparent px-4 outline-none transition focus:border-black dark:border-white/15 dark:focus:border-white" />}
+          <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" placeholder="E-mail" className="min-h-12 w-full rounded-xl border border-slate-300 bg-transparent px-4 outline-none transition focus:border-black dark:border-white/15 dark:focus:border-white" />
+          <input value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} type="password" placeholder="Senha" className="min-h-12 w-full rounded-xl border border-slate-300 bg-transparent px-4 outline-none transition focus:border-black dark:border-white/15 dark:focus:border-white" />
+          <button disabled={busy} className="min-h-12 w-full rounded-xl bg-black px-4 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[.99] disabled:opacity-50 dark:bg-white dark:text-black">{busy ? "Processando..." : mode === "login" ? "Entrar" : "Criar conta"}</button>
+        </form>
+
+        {message && <p className="mt-4 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600 dark:bg-white/5 dark:text-slate-300">{message}</p>}
+
+        <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setMessage(""); }} className="mt-6 w-full text-sm font-semibold text-slate-600 underline-offset-4 hover:underline dark:text-slate-300">
+          {mode === "login" ? "Ainda não tenho uma conta" : "Já tenho uma conta"}
+        </button>
+      </section>
+    </main>
+  );
+}
