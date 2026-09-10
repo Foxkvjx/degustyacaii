@@ -1,30 +1,21 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import MobileNav from "../components/MobileNav";
+import { supabase } from "../../lib/supabase";
 
-const cards = [
-  ["Faturamento", "R$ 1.428,00", "+12,4%", "text-emerald-600"],
-  ["Copos vendidos", "102", "+8 hoje", "text-acai-700"],
-  ["Ticket médio", "R$ 14,00", "Meta R$ 14,00", "text-purple-600"],
-  ["Estoque", "13,6 L", "~45 copos", "text-amber-600"],
-];
+type Venda = { id: string; produto: string; quantidade: number; valor: number; data: string };
+type Produto = { id: string; nome: string; qtd: number; custo: number; unidade: string };
+const money = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 
 export default function Dashboard() {
-  return (
-    <main className="min-h-screen bg-slate-50 pb-24 sm:pb-0">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-center">
-          <div><Link href="/" className="text-sm text-acai-700 hover:underline">← Início</Link><h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Dashboard</h1><p className="mt-1 text-sm text-slate-500">Visão geral da operação.</p></div>
-          <span className="rounded-full bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm">Hoje</span>
-        </div>
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-          {cards.map(([label, value, note, color]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><p className="text-xs text-slate-500 sm:text-sm">{label}</p><p className={`mt-2 text-xl font-bold sm:text-2xl ${color}`}>{value}</p><p className="mt-1 text-[11px] text-slate-400 sm:text-xs">{note}</p></div>)}
-        </section>
-        <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[1.5fr_1fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><div className="flex items-center justify-between"><h2 className="font-semibold text-slate-900">Vendas dos últimos dias</h2><span className="text-xs text-slate-400">Copos</span></div><div className="mt-5 flex h-44 items-end gap-2 sm:mt-6 sm:h-48 sm:gap-3">{[38,52,44,67,58,78,102].map((height,i)=><div key={i} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-lg bg-acai-500" style={{height:`${height}%`}}/><span className="text-[10px] text-slate-400 sm:text-xs">{["Seg","Ter","Qua","Qui","Sex","Sáb","Hoje"][i]}</span></div>)}</div></section>
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><h2 className="font-semibold text-slate-900">Resumo operacional</h2><div className="mt-5 space-y-4 text-sm"><div className="flex justify-between"><span className="text-slate-500">Meta diária</span><b>66 copos</b></div><div className="flex justify-between"><span className="text-slate-500">Realizado</span><b>102 copos</b></div><div className="h-2 rounded-full bg-slate-100"><div className="h-2 w-full rounded-full bg-acai-600"/></div><div className="flex justify-between"><span className="text-slate-500">Ponto de equilíbrio</span><b>23 copos</b></div><div className="rounded-xl bg-purple-50 p-3 text-sm text-purple-800 sm:p-4">A operação está acima da meta projetada.</div></div></section>
-        </div>
-      </div>
-      <MobileNav />
-    </main>
-  );
+  const [vendas, setVendas] = useState<Venda[]>([]); const [produtos, setProdutos] = useState<Produto[]>([]); const [meta, setMeta] = useState(66); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
+  async function load() { setLoading(true); setError(null); const [sales, stock, config] = await Promise.all([supabase.from("vendas").select("id, produto, quantidade, valor, data").order("data", {ascending:false}).limit(500), supabase.from("produtos").select("id, nome, qtd, custo, unidade"), supabase.from("config").select("meta_diaria").limit(1).maybeSingle()]); if (sales.error || stock.error || config.error) setError(sales.error?.message || stock.error?.message || config.error?.message || "Erro ao carregar dados"); setVendas((sales.data ?? []) as Venda[]); setProdutos((stock.data ?? []) as Produto[]); if (config.data?.meta_diaria != null) setMeta(Number(config.data.meta_diaria)); setLoading(false); }
+  useEffect(() => { load(); }, []);
+  const today = dayKey(new Date()); const todaySales = useMemo(() => vendas.filter(v => dayKey(new Date(v.data)) === today), [vendas, today]);
+  const revenue = useMemo(() => todaySales.reduce((s,v)=>s+Number(v.valor),0), [todaySales]); const cups = useMemo(()=>todaySales.reduce((s,v)=>s+Number(v.quantidade),0),[todaySales]); const ticket = cups ? revenue/cups : 0; const acai = produtos.find(p => p.nome.toLowerCase() === "açaí"); const stockValue = produtos.reduce((s,p)=>s+Number(p.qtd)*Number(p.custo),0); const progress = meta ? Math.min(100, cups/meta*100) : 0;
+  const lastDays = Array.from({length:7}, (_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(6-i)); const key=dayKey(d); return {label:i===6?"Hoje":d.toLocaleDateString("pt-BR",{weekday:"short"}).replace(".",""), cups:vendas.filter(v=>dayKey(new Date(v.data))===key).reduce((s,v)=>s+Number(v.quantidade),0)}; }); const max=Math.max(1,...lastDays.map(d=>d.cups));
+  return <main className="min-h-screen bg-slate-50 pb-24 sm:pb-0"><div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8"><div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-center"><div><Link href="/" className="text-sm text-acai-700 hover:underline">← Início</Link><h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Dashboard</h1><p className="mt-1 text-sm text-slate-500">Dados reais do Supabase.</p></div><button onClick={load} disabled={loading} className="rounded-full bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm disabled:opacity-60">{loading?"Atualizando...":"↻ Atualizar"}</button></div>{error&&<div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}<section className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">{[["Faturamento",money(revenue),"Hoje","text-emerald-600"],["Copos vendidos",String(cups),"Hoje","text-acai-700"],["Ticket médio",money(ticket),"Hoje","text-purple-600"],["Estoque",acai?`${Number(acai.qtd).toLocaleString("pt-BR")} ${acai.unidade === "litros" ? "L" : acai.unidade}`:"0 L",`Valor ${money(stockValue)}`,"text-amber-600"]].map(([label,value,note,color])=><div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><p className="text-xs text-slate-500 sm:text-sm">{label}</p><p className={`mt-2 text-xl font-bold sm:text-2xl ${color}`}>{loading?"...":value}</p><p className="mt-1 text-[11px] text-slate-400 sm:text-xs">{note}</p></div>)}</section><div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[1.5fr_1fr]"><section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><div className="flex items-center justify-between"><h2 className="font-semibold text-slate-900">Vendas dos últimos dias</h2><span className="text-xs text-slate-400">Copos</span></div><div className="mt-5 flex h-44 items-end gap-2 sm:mt-6 sm:h-48 sm:gap-3">{lastDays.map((d,i)=><div key={i} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-lg bg-acai-500" style={{height:`${Math.max(3,d.cups/max*100)}%`}} title={`${d.cups} copos`}/><span className="text-[10px] text-slate-400 sm:text-xs">{d.label}</span></div>)}</div></section><section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><h2 className="font-semibold text-slate-900">Resumo operacional</h2><div className="mt-5 space-y-4 text-sm"><div className="flex justify-between"><span className="text-slate-500">Meta diária</span><b>{meta} copos</b></div><div className="flex justify-between"><span className="text-slate-500">Realizado</span><b>{cups} copos</b></div><div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-acai-600" style={{width:`${progress}%`}}/></div><div className="flex justify-between"><span className="text-slate-500">Estoque de açaí</span><b>{acai?`${Number(acai.qtd)} ${acai.unidade === "litros" ? "L" : acai.unidade}`:"0 L"}</b></div><div className="rounded-xl bg-purple-50 p-3 text-sm text-purple-800 sm:p-4">{cups>=meta?"A operação está acima da meta diária.":`Faltam ${Math.max(0,meta-cups)} copos para atingir a meta.`}</div></div></section></div></div><MobileNav /></main>;
 }
