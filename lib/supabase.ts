@@ -1,15 +1,35 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Public Supabase configuration. The fallback prevents Vercel prerendering
-// from failing when NEXT_PUBLIC_* variables are not configured yet.
+// Keep a browser-safe fallback so the app still works when Vercel env vars
+// are missing. The legacy anon key is intentionally public and is protected
+// by Supabase RLS.
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://zamcnogwjnxqwylltbuj.supabase.co";
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "sb_publishable_yjv-2lhYKHsBb_mx5Hh3GA_v0wxyS4U";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWNub2d3am54cXd5bGx0YnVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTk0MTEsImV4cCI6MjA5MDk5NTQxMX0.Z5QfcQ5i6BS1lhmpY5TXwm_HFmITTXDrwhzrnMXP3jw";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+async function resilientFetch(input: RequestInfo | URL, init?: RequestInit) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await fetch(input, init);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Não foi possível conectar ao Supabase.");
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: resilientFetch },
+});
 
 export type Produto = {
   id: string;
