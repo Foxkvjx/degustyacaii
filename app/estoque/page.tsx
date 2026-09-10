@@ -1,135 +1,25 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import MobileNav from "../components/MobileNav";
 import { supabase } from "../../lib/supabase";
 
-type Produto = {
-  id: string;
-  nome: string;
-  qtd: number;
-  custo: number;
-  min: number;
-  unidade: string;
-  updated_at: string;
-};
+type Produto={id:string;nome:string;qtd:number;custo:number;min:number;unidade:string;updated_at:string};
+const num=(n:number)=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2}).format(n);
+const money=(n:number)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(n);
+const qty=(n:number,u:string)=>`${num(n)} ${u==="litros"?"L":u}`;
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(value);
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
-function formatQuantity(qtd: number, unidade: string) {
-  const unit = unidade === "litros" ? "L" : unidade;
-  return `${formatNumber(qtd)} ${unit}`;
-}
-
-export default function Estoque() {
-  const [items, setItems] = useState<Produto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  async function loadStock() {
-    setLoading(true);
-    setError(null);
-
-    const { data, error: supabaseError } = await supabase
-      .from("produtos")
-      .select("id, nome, qtd, custo, min, unidade, updated_at")
-      .order("nome", { ascending: true });
-
-    if (supabaseError) {
-      setError(`Não foi possível carregar o estoque: ${supabaseError.message}`);
-      setItems([]);
-    } else {
-      setItems((data ?? []) as Produto[]);
-    }
-
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    loadStock();
-  }, []);
-
-  const totalValue = useMemo(
-    () => items.reduce((total, item) => total + Number(item.qtd) * Number(item.custo), 0),
-    [items]
-  );
-
-  const lowStock = useMemo(
-    () => items.filter((item) => Number(item.qtd) <= Number(item.min)).length,
-    [items]
-  );
-
-  const acai = items.find((item) => item.nome.toLowerCase() === "açaí");
-
-  return (
-    <main className="min-h-screen bg-slate-50 pb-24 sm:pb-0">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <Link href="/" className="text-sm text-acai-700 hover:underline">← Início</Link>
-        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Estoque</h1>
-            <p className="mt-1 text-sm text-slate-500">Dados em tempo real do Supabase.</p>
-          </div>
-          <button onClick={loadStock} disabled={loading} className="w-full rounded-xl bg-acai-700 px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60 sm:w-auto">
-            {loading ? "Atualizando..." : "↻ Atualizar estoque"}
-          </button>
-        </div>
-
-        {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-7 sm:grid-cols-3 sm:gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <p className="text-xs text-slate-500">Estoque de açaí</p>
-            <b className="mt-2 block text-xl sm:text-2xl">{loading ? "..." : acai ? formatQuantity(Number(acai.qtd), acai.unidade) : "0 L"}</b>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <p className="text-xs text-slate-500">Valor do estoque</p>
-            <b className="mt-2 block text-xl sm:text-2xl">{loading ? "..." : formatCurrency(totalValue)}</b>
-          </div>
-          <div className="col-span-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:col-span-1 sm:p-5">
-            <p className="text-xs text-slate-500">Itens para revisar</p>
-            <b className={`mt-2 block text-xl sm:text-2xl ${lowStock > 0 ? "text-amber-600" : "text-emerald-600"}`}>{loading ? "..." : lowStock}</b>
-          </div>
-        </div>
-
-        <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mt-6">
-          <div className="border-b border-slate-100 px-4 py-4 font-semibold sm:px-5">Itens em estoque</div>
-          {loading ? (
-            <div className="px-4 py-8 text-center text-sm text-slate-500">Carregando dados do Supabase...</div>
-          ) : items.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-slate-500">Nenhum produto encontrado.</div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {items.map((item) => {
-                const quantity = Number(item.qtd);
-                const minimum = Number(item.min);
-                const isLow = quantity <= minimum;
-                return (
-                  <div key={item.id} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 px-4 py-4 sm:grid-cols-4 sm:items-center sm:px-5">
-                    <div>
-                      <div className="font-medium text-slate-800">{item.nome}</div>
-                      <div className="mt-0.5 text-xs text-slate-400">Mínimo: {formatQuantity(minimum, item.unidade)}</div>
-                    </div>
-                    <div className="text-right text-sm text-slate-600 sm:text-left">{formatQuantity(quantity, item.unidade)}</div>
-                    <div className="text-sm text-slate-600">{formatCurrency(quantity * Number(item.custo))}</div>
-                    <div className="col-span-2 text-left sm:col-span-1 sm:text-right">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${isLow ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>{isLow ? "Baixo" : "Normal"}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-      <MobileNav />
-    </main>
-  );
+export default function Estoque(){
+ const [items,setItems]=useState<Produto[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState<string|null>(null);
+ const [form,setForm]=useState({nome:"",qtd:"",custo:"",min:"",unidade:"un"});
+ async function load(){setLoading(true);setError(null);const {data,error}=await supabase.from("produtos").select("id,nome,qtd,custo,min,unidade,updated_at").order("nome");if(error)setError(error.message);else setItems((data??[])as Produto[]);setLoading(false)}
+ useEffect(()=>{load()},[]);
+ async function add(e:React.FormEvent){e.preventDefault();setSaving(true);setError(null);const qtd=Number(form.qtd),custo=Number(form.custo),min=Number(form.min);if(!form.nome.trim()||!Number.isFinite(qtd)||qtd<0||!Number.isFinite(custo)||custo<0||!Number.isFinite(min)||min<0){setError("Preencha os campos corretamente.");setSaving(false);return}const {error}=await supabase.from("produtos").insert({nome:form.nome.trim(),qtd,custo,min,unidade:form.unidade.trim()||"un"});if(error)setError(error.message);else{setForm({nome:"",qtd:"",custo:"",min:"",unidade:"un"});await load()}setSaving(false)}
+ async function edit(p:Produto){const raw=window.prompt(`Nova quantidade para ${p.nome}`,String(p.qtd));if(raw===null)return;const qtd=Number(raw);if(!Number.isFinite(qtd)||qtd<0){setError("Quantidade inválida.");return}const {error}=await supabase.from("produtos").update({qtd,updated_at:new Date().toISOString()}).eq("id",p.id);if(error)setError(error.message);else load()}
+ async function remove(p:Produto){if(!window.confirm(`Excluir ${p.nome}?`))return;const {error}=await supabase.from("produtos").delete().eq("id",p.id);if(error)setError(error.message);else load()}
+ const total=useMemo(()=>items.reduce((s,p)=>s+Number(p.qtd)*Number(p.custo),0),[items]);const low=items.filter(p=>Number(p.qtd)<=Number(p.min)).length;const acai=items.find(p=>p.nome.toLowerCase()==="açaí");
+ return <main className="min-h-screen bg-slate-50 pb-24 sm:pb-0"><div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8"><Link href="/" className="text-sm text-acai-700 hover:underline">← Início</Link><div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-2xl font-bold sm:text-3xl">Estoque</h1><p className="mt-1 text-sm text-slate-500">Cadastro e quantidade persistidos no Supabase.</p></div><button onClick={load} disabled={loading} className="w-full rounded-xl bg-acai-700 px-4 py-3 font-semibold text-white sm:w-auto">{loading?"Atualizando...":"↻ Atualizar"}</button></div>{error&&<div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+ <form onSubmit={add} className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><h2 className="font-semibold">Adicionar produto</h2><div className="mt-4 grid gap-3 sm:grid-cols-5"><input required value={form.nome} onChange={e=>setForm({...form,nome:e.target.value})} placeholder="Nome" className="rounded-xl border px-3 py-3 text-sm"/><input required type="number" min="0" step="0.01" value={form.qtd} onChange={e=>setForm({...form,qtd:e.target.value})} placeholder="Quantidade" className="rounded-xl border px-3 py-3 text-sm"/><input required type="number" min="0" step="0.01" value={form.custo} onChange={e=>setForm({...form,custo:e.target.value})} placeholder="Custo unitário" className="rounded-xl border px-3 py-3 text-sm"/><input required type="number" min="0" value={form.min} onChange={e=>setForm({...form,min:e.target.value})} placeholder="Mínimo" className="rounded-xl border px-3 py-3 text-sm"/><button disabled={saving} className="rounded-xl bg-acai-700 px-4 py-3 font-semibold text-white">{saving?"Salvando...":"Adicionar"}</button></div><input value={form.unidade} onChange={e=>setForm({...form,unidade:e.target.value})} placeholder="Unidade: un, L, kg..." className="mt-3 w-full rounded-xl border px-3 py-3 text-sm"/></form>
+ <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3"><div className="rounded-2xl border bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Açaí</p><b className="mt-2 block text-xl">{loading?"...":acai?qty(Number(acai.qtd),acai.unidade):"0 L"}</b></div><div className="rounded-2xl border bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Valor do estoque</p><b className="mt-2 block text-xl">{loading?"...":money(total)}</b></div><div className="col-span-2 rounded-2xl border bg-white p-4 shadow-sm sm:col-span-1"><p className="text-xs text-slate-500">Para revisar</p><b className="mt-2 block text-xl">{loading?"...":low}</b></div></div>
+ <section className="mt-4 overflow-hidden rounded-2xl border bg-white shadow-sm sm:mt-6"><div className="border-b px-4 py-4 font-semibold">Produtos</div>{loading?<div className="p-8 text-center text-sm text-slate-500">Carregando...</div>:items.length===0?<div className="p-8 text-center text-sm text-slate-500">Nenhum produto cadastrado.</div>:items.map(p=><div key={p.id} className="grid grid-cols-[1fr_auto] gap-3 border-b px-4 py-4 last:border-0 sm:grid-cols-[1fr_auto_auto_auto]"><div><b>{p.nome}</b><p className="text-xs text-slate-400">Mínimo: {qty(Number(p.min),p.unidade)} · Custo: {money(Number(p.custo))}</p></div><span className="text-right text-sm">{qty(Number(p.qtd),p.unidade)}</span><button onClick={()=>edit(p)} className="rounded-lg border px-3 py-1 text-xs">Editar</button><button onClick={()=>remove(p)} className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600">Excluir</button></div>)}</section></div><MobileNav/></main>;
 }
