@@ -1,7 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Public Supabase configuration. The fallback prevents Vercel prerendering
-// from failing when NEXT_PUBLIC_* variables are not configured yet.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://zamcnogwjnxqwylltbuj.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_yjv-2lhYKHsBb_mx5Hh3GA_v0wxyS4U";
 
