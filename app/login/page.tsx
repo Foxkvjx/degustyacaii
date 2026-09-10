@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
@@ -8,6 +8,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "auth_callback") {
+      setMessage("Não foi possível concluir o login com Google. Tente novamente.");
+    }
+  }, []);
 
   async function handleLogin(event: FormEvent) {
     event.preventDefault();
@@ -34,7 +41,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (error) {
@@ -57,7 +64,7 @@ export default function LoginPage() {
           disabled={busy}
           className="mb-4 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
         >
-          Continuar com Google
+          {busy ? "Conectando ao Google..." : "Continuar com Google"}
         </button>
 
         <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
