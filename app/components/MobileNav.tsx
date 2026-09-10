@@ -14,11 +14,21 @@ const items = [
 export default function MobileNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur dark:bg-black/95 sm:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+    <nav aria-label="Navegação principal" className="mobile-app-nav fixed inset-x-0 bottom-0 z-[90] border-t border-slate-200/80 bg-white/90 px-2 pt-2 backdrop-blur-xl dark:border-white/10 dark:bg-black/90 sm:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1 pb-[max(8px,env(safe-area-inset-bottom))]">
         {items.map(([href, label, icon]) => {
           const active = pathname === href;
-          return <Link key={href} href={href} className={`flex min-h-14 flex-col items-center justify-center rounded-xl px-2 text-[11px] font-semibold transition-colors ${active ? "bg-black text-white dark:bg-white dark:text-black" : "text-slate-500"}`}><span className="text-lg leading-5">{icon}</span><span className="mt-1">{label}</span></Link>;
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-14 flex-col items-center justify-center rounded-xl px-2 text-[11px] font-semibold transition-all duration-200 ${active ? "bg-black text-white shadow-sm dark:bg-white dark:text-black" : "text-slate-500 active:scale-95 dark:text-slate-400"}`}
+            >
+              <span className="text-lg leading-5">{icon}</span>
+              <span className="mt-1">{label}</span>
+            </Link>
+          );
         })}
       </div>
     </nav>
