@@ -29,7 +29,7 @@ App para gestão de estoque, vendas, gastos e clima da **Degusty Açaí**.
 - [x] Metas e ponto de equilíbrio
 - [x] Layout mobile-first
 - [x] Navegação inferior para celular
-- [ ] Integração completa das telas com Supabase
+- [x] Integração operacional com Supabase
 - [ ] Autenticação
 
 ## Interface mobile
