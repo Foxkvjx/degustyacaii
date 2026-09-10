@@ -1,5 +1,4 @@
 import Link from "next/link";
-import MobileNav from "./components/MobileNav";
 
 const screens = [
   ["/dashboard", "Dashboard", "Visão geral do dia, metas e ponto de equilíbrio", "01"],
@@ -20,7 +19,7 @@ export default function Home() {
           {screens.map(([href, title, description, number]) => <Link key={href} href={href} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 active:scale-[0.99] sm:p-6 sm:hover:-translate-y-0.5 sm:hover:shadow-md"><div className="flex items-start justify-between gap-4"><span className="text-xs font-medium tabular-nums text-slate-400">{number}</span><span className="text-sm text-slate-400 transition-transform group-hover:translate-x-0.5">↗</span></div><h2 className="mt-8 text-lg font-semibold tracking-[-0.02em] text-slate-900">{title}</h2><p className="mt-2 text-sm leading-5 text-slate-500">{description}</p></Link>)}
         </section>
         <footer className="mt-10 border-t border-slate-200 pt-5 text-xs text-slate-400 sm:mt-14">Degusty Açaí · Painel operacional</footer>
-      </div><MobileNav />
+      </div>
     </main>
   );
 }
