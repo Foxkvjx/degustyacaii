@@ -59,6 +59,12 @@ main > *:nth-child(4) { animation-delay:46ms; }
 @keyframes degusty-sync-in { from { opacity:0; transform:translate(-50%,-5px) scale(.98); } to { opacity:1; transform:translate(-50%,0) scale(1); } }
 @keyframes degusty-pulse { 0%,100% { opacity:.45; transform:scale(.85); } 50% { opacity:1; transform:scale(1.15); } }
 
+/* Keep the persistent root navigation and hide any legacy page-level copy. */
+@media (max-width:639px) {
+  body > .mobile-app-nav { display:block!important; }
+  main .mobile-app-nav { display:none!important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior:auto; }
   *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; }
