@@ -43,18 +43,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       if (id && pathname === "/login") router.replace("/dashboard");
     };
     supabase.auth.getSession().then(({ data }) => apply(data.session?.user.id ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      apply(session?.user.id ?? null);
-    });
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => apply(session?.user.id ?? null));
+    return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, [pathname, router]);
 
-  if (checking) {
-    return <main className="flex min-h-screen items-center justify-center bg-white text-sm text-slate-500 dark:bg-black dark:text-slate-400">Verificando acesso...</main>;
-  }
+  if (checking) return <main className="flex min-h-screen items-center justify-center bg-white text-sm text-slate-500 dark:bg-black dark:text-slate-400">Verificando acesso...</main>;
   if (!userId && pathname !== "/login") return null;
   if (userId && pathname === "/login") return null;
   return <>{children}</>;
