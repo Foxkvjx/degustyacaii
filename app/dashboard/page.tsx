@@ -1,93 +1,32 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ChevronRight, CircleDollarSign, Package, Plus, RefreshCw, ShoppingBag, Target, type LucideIcon } from "lucide-react";
 import MobileNav from "../components/MobileNav";
 import { supabase } from "../../lib/supabase";
+import { readCache, writeCache } from "../../lib/localCache";
 
 type Venda = { id: string; produto: string; quantidade: number; valor: number; data: string };
 type Produto = { id: string; nome: string; qtd: number; custo: number; unidade: string };
 type Metric = { label: string; value: string; note: string; Icon: LucideIcon };
 type Weather = { temperature: number; code: number } | null;
-
-const money = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
-const dayKey = (value: Date | string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
-const weatherLabels: Record<number, { label: string; icon: string }> = { 0: { label: "céu limpo", icon: "☀️" }, 1: { label: "poucas nuvens", icon: "🌤️" }, 2: { label: "parcialmente nublado", icon: "⛅" }, 3: { label: "nublado", icon: "☁️" }, 45: { label: "neblina", icon: "🌫️" }, 48: { label: "neblina", icon: "🌫️" }, 51: { label: "garoa", icon: "🌦️" }, 53: { label: "garoa", icon: "🌦️" }, 55: { label: "garoa", icon: "🌧️" }, 61: { label: "chuva leve", icon: "🌧️" }, 63: { label: "chuva", icon: "🌧️" }, 65: { label: "chuva forte", icon: "🌧️" }, 80: { label: "pancadas de chuva", icon: "🌦️" }, 81: { label: "pancadas de chuva", icon: "🌦️" }, 82: { label: "pancadas fortes", icon: "⛈️" }, 95: { label: "trovoada", icon: "⛈️" }, 96: { label: "trovoada", icon: "⛈️" }, 99: { label: "trovoada", icon: "⛈️" } };
-
-function getGreeting(hour: number) { if (hour >= 5 && hour < 12) return "Bom dia"; if (hour >= 12 && hour < 18) return "Boa tarde"; return "Boa noite"; }
-
-export default function Dashboard() {
-  const [vendas, setVendas] = useState<Venda[]>([]);
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [meta, setMeta] = useState(66);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [weather, setWeather] = useState<Weather>(null);
-  const [now, setNow] = useState(new Date());
-
-  async function load() {
-    setLoading(true); setError(null);
-    const [sales, stock, config] = await Promise.all([
-      supabase.from("vendas").select("id, produto, quantidade, valor, data").order("data", { ascending: false }).limit(500),
-      supabase.from("produtos").select("id, nome, qtd, custo, unidade"),
-      supabase.from("config").select("meta_diaria").limit(1).maybeSingle(),
-    ]);
-    if (sales.error || stock.error || config.error) setError(sales.error?.message || stock.error?.message || config.error?.message || "Erro ao carregar dados");
-    setVendas((sales.data ?? []) as Venda[]); setProdutos((stock.data ?? []) as Produto[]);
-    if (config.data?.meta_diaria != null) setMeta(Number(config.data.meta_diaria));
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
-  useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 30000); return () => window.clearInterval(timer); }, []);
-  useEffect(() => {
-    let cancelled = false;
-    async function loadWeather() {
-      try {
-        const params = new URLSearchParams({ latitude: "-23.6639", longitude: "-46.5383", current: "temperature_2m,weather_code", timezone: "America/Sao_Paulo" });
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!cancelled) setWeather({ temperature: Math.round(data.current.temperature_2m), code: Number(data.current.weather_code) });
-      } catch { /* clima é complementar ao dashboard */ }
-    }
-    loadWeather();
-    const timer = window.setInterval(loadWeather, 30 * 60 * 1000);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, []);
-
-  const today = dayKey(now);
-  const todaySales = useMemo(() => vendas.filter(v => dayKey(v.data) === today), [vendas, today]);
-  const revenue = useMemo(() => todaySales.reduce((s, v) => s + Number(v.valor), 0), [todaySales]);
-  const cups = useMemo(() => todaySales.reduce((s, v) => s + Number(v.quantidade), 0), [todaySales]);
-  const ticket = cups ? revenue / cups : 0;
-  const acai = produtos.find(p => p.nome.trim().toLowerCase() === "açaí");
-  const stockValue = produtos.reduce((s, p) => s + Number(p.qtd) * Number(p.custo), 0);
-  const progress = meta ? Math.min(100, cups / meta * 100) : 0;
-  const hour = Number(new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).format(now));
-  const time = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }).format(now);
-  const condition = weatherLabels[weather?.code ?? 0] ?? { label: "clima indisponível", icon: "☀️" };
-  const lastDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); const key = dayKey(d); return { label: i === 6 ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short" }).format(d).replace(".", ""), cups: vendas.filter(v => dayKey(v.data) === key).reduce((s, v) => s + Number(v.quantidade), 0) }; });
-  const max = Math.max(1, ...lastDays.map(d => d.cups));
-
-  const metrics: Metric[] = [
-    { label: "Copos", value: loading ? "..." : String(cups), note: "Hoje", Icon: ShoppingBag },
-    { label: "Ticket", value: loading ? "..." : money(ticket), note: "Médio", Icon: CircleDollarSign },
-    { label: "Açaí", value: acai ? `${Number(acai.qtd)} ${acai.unidade === "litros" ? "L" : acai.unidade}` : "0 L", note: "Estoque", Icon: Package },
-    { label: "Estoque", value: loading ? "..." : money(stockValue), note: "Valor", Icon: Target },
-  ];
-
-  return (
-    <main className="min-h-screen bg-slate-50 pb-24 sm:pb-0">
-      <div className="mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-10">
-        <header className="flex items-start justify-between gap-4"><div><Link href="/" className="text-xs font-medium text-slate-500">Degusty Açaí</Link><p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">{time}</p><h1 className="mt-2 text-[32px] font-semibold leading-none tracking-[-0.055em] text-slate-900">{getGreeting(hour)}, Gabriel.</h1><div className="mt-3 flex items-center gap-2 text-sm text-slate-500"><span>{condition.icon}</span><span className="capitalize">{condition.label}</span>{weather && <span>· {weather.temperature}°C em Santo André</span>}</div><p className="mt-2 text-sm text-slate-500">Visão geral da operação</p></div><button onClick={load} disabled={loading} aria-label="Atualizar dados" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-none dark:bg-white dark:text-black"><RefreshCw size={17} className={loading ? "animate-spin" : ""} /></button></header>
-        {error && <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">{error}</div>}
-        <section className="mt-8 rounded-[28px] bg-black p-6 text-white dark:bg-white dark:text-black sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-medium opacity-60">Faturamento hoje</p><p className="mt-3 text-[42px] font-semibold leading-none tracking-[-0.06em] sm:text-5xl">{loading ? "..." : money(revenue)}</p></div><CircleDollarSign size={25} strokeWidth={1.7} className="opacity-80" /></div><div className="mt-8 flex items-end justify-between gap-4"><div><p className="text-xs opacity-60">Meta diária</p><p className="mt-1 text-sm font-semibold">{cups} / {meta} copos</p></div><span className="text-xs font-semibold">{Math.round(progress)}%</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20 dark:bg-black/15"><div className="h-full rounded-full bg-white dark:bg-black" style={{ width: `${progress}%` }} /></div></section>
-        <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">{metrics.map(({ label, value, note, Icon }) => <div key={label} className="rounded-2xl bg-white p-4 dark:bg-[#080808] sm:p-5"><Icon size={18} strokeWidth={1.7} className="text-slate-500"/><p className="mt-5 text-[11px] font-medium text-slate-500">{label}</p><p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">{value}</p><p className="mt-1 text-[11px] text-slate-400">{note}</p></div>)}</section>
-        <section className="mt-4 rounded-2xl bg-white p-5 dark:bg-[#080808] sm:p-6"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-slate-500">Desempenho</p><h2 className="mt-1 text-lg font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">Vendas recentes</h2></div><Link href="/vendas" className="flex items-center gap-1 text-xs font-semibold text-slate-500">Ver tudo <ChevronRight size={14}/></Link></div><div className="mt-7 flex h-36 items-end gap-2 sm:h-44 sm:gap-3">{lastDays.map((d,i)=><div key={i} className="flex flex-1 flex-col items-center gap-2"><div className="w-full max-w-10 rounded-t-md bg-black dark:bg-white" style={{height:`${Math.max(5,d.cups/max*100)}%`}}/><span className="text-[10px] text-slate-400">{d.label}</span></div>)}</div></section>
-        <section className="mt-4 grid gap-3 sm:grid-cols-2"><Link href="/vendas" className="group rounded-2xl bg-white p-5 dark:bg-[#080808]"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Operação</p><p className="mt-1 font-semibold text-slate-900 dark:text-white">Registrar venda</p></div><span className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black"><Plus size={18}/></span></div></Link><Link href="/estoque" className="group rounded-2xl bg-white p-5 dark:bg-[#080808]"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Controle</p><p className="mt-1 font-semibold text-slate-900 dark:text-white">Ver estoque</p></div><span className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black"><ArrowUpRight size={18}/></span></div></Link></section>
-      </div><MobileNav />
-    </main>
-  );
+const money = (n:number) => new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(n);
+const dayKey = (value:Date|string) => new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(value));
+const weatherLabels:Record<number,{label:string;icon:string}>={0:{label:"céu limpo",icon:"☀️"},1:{label:"poucas nuvens",icon:"🌤️"},2:{label:"parcialmente nublado",icon:"⛅"},3:{label:"nublado",icon:"☁️"},45:{label:"neblina",icon:"🌫️"},48:{label:"neblina",icon:"🌫️"},51:{label:"garoa",icon:"🌦️"},53:{label:"garoa",icon:"🌦️"},55:{label:"garoa",icon:"🌧️"},61:{label:"chuva leve",icon:"🌧️"},63:{label:"chuva",icon:"🌧️"},65:{label:"chuva forte",icon:"🌧️"},80:{label:"pancadas de chuva",icon:"🌦️"},81:{label:"pancadas de chuva",icon:"🌦️"},82:{label:"pancadas fortes",icon:"⛈️"},95:{label:"trovoada",icon:"⛈️"},96:{label:"trovoada",icon:"⛈️"},99:{label:"trovoada",icon:"⛈️"}};
+function getGreeting(hour:number){if(hour>=5&&hour<12)return "Bom dia";if(hour>=12&&hour<18)return "Boa tarde";return "Boa noite"}
+const SALES_CACHE="dashboard:vendas",STOCK_CACHE="dashboard:produtos",META_CACHE="dashboard:meta";
+export default function Dashboard(){
+ const [vendas,setVendas]=useState<Venda[]>(()=>readCache<Venda[]>(SALES_CACHE,[]));
+ const [produtos,setProdutos]=useState<Produto[]>(()=>readCache<Produto[]>(STOCK_CACHE,[]));
+ const [meta,setMeta]=useState(()=>readCache<number>(META_CACHE,66));
+ const hasCache=vendas.length>0||produtos.length>0;
+ const [loading,setLoading]=useState(!hasCache),[error,setError]=useState<string|null>(null),[weather,setWeather]=useState<Weather>(null),[now,setNow]=useState(new Date());
+ async function load(silent=true){if(!silent)setLoading(true);setError(null);const [sales,stock,config]=await Promise.all([supabase.from("vendas").select("id, produto, quantidade, valor, data").order("data",{ascending:false}).limit(500),supabase.from("produtos").select("id, nome, qtd, custo, unidade"),supabase.from("config").select("meta_diaria").limit(1).maybeSingle()]);if(sales.error||stock.error||config.error){setError(sales.error?.message||stock.error?.message||config.error?.message||"Erro ao carregar dados")}else{const nextSales=(sales.data??[])as Venda[],nextStock=(stock.data??[])as Produto[];setVendas(nextSales);setProdutos(nextStock);writeCache(SALES_CACHE,nextSales);writeCache(STOCK_CACHE,nextStock);if(config.data?.meta_diaria!=null){const nextMeta=Number(config.data.meta_diaria);setMeta(nextMeta);writeCache(META_CACHE,nextMeta)}}if(!silent)setLoading(false)}
+ useEffect(()=>{void load(true)},[]);
+ useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),30000);return()=>window.clearInterval(timer)},[]);
+ useEffect(()=>{let cancelled=false;async function loadWeather(){try{const params=new URLSearchParams({latitude:"-23.6639",longitude:"-46.5383",current:"temperature_2m,weather_code",timezone:"America/Sao_Paulo"});const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);if(!response.ok)return;const data=await response.json();if(!cancelled)setWeather({temperature:Math.round(data.current.temperature_2m),code:Number(data.current.weather_code)})}catch{}}loadWeather();const timer=window.setInterval(loadWeather,30*60*1000);return()=>{cancelled=true;window.clearInterval(timer)}},[]);
+ const today=dayKey(now),todaySales=useMemo(()=>vendas.filter(v=>dayKey(v.data)===today),[vendas,today]),revenue=useMemo(()=>todaySales.reduce((s,v)=>s+Number(v.valor),0),[todaySales]),cups=useMemo(()=>todaySales.reduce((s,v)=>s+Number(v.quantidade),0),[todaySales]),ticket=cups?revenue/cups:0,acai=produtos.find(p=>p.nome.trim().toLowerCase()==="açaí"),stockValue=produtos.reduce((s,p)=>s+Number(p.qtd)*Number(p.custo),0),progress=meta?Math.min(100,cups/meta*100):0,hour=Number(new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",hour12:false}).format(now)),time=new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"}).format(now),condition=weatherLabels[weather?.code??0]??{label:"clima indisponível",icon:"☀️"};
+ const lastDays=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));const key=dayKey(d);return{label:i===6?"Hoje":new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",weekday:"short"}).format(d).replace(".",""),cups:vendas.filter(v=>dayKey(v.data)===key).reduce((s,v)=>s+Number(v.quantidade),0)}}),max=Math.max(1,...lastDays.map(d=>d.cups));
+ const metrics:Metric[]=[{label:"Copos",value:loading?"...":String(cups),note:"Hoje",Icon:ShoppingBag},{label:"Ticket",value:loading?"...":money(ticket),note:"Médio",Icon:CircleDollarSign},{label:"Açaí",value:acai?`${Number(acai.qtd)} ${acai.unidade==="litros"?"L":acai.unidade}`:"0 L",note:"Estoque",Icon:Package},{label:"Estoque",value:loading?"...":money(stockValue),note:"Valor",Icon:Target}];
+ return <main className="min-h-screen bg-slate-50 pb-24 sm:pb-0"><div className="mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-10"><header className="flex items-start justify-between gap-4"><div><Link href="/" className="text-xs font-medium text-slate-500">Degusty Açaí</Link><p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">{time}</p><h1 className="mt-2 text-[32px] font-semibold leading-none tracking-[-0.055em] text-slate-900">{getGreeting(hour)}, Gabriel.</h1><div className="mt-3 flex items-center gap-2 text-sm text-slate-500"><span>{condition.icon}</span><span className="capitalize">{condition.label}</span>{weather&&<span>· {weather.temperature}°C em Santo André</span>}</div><p className="mt-2 text-sm text-slate-500">Visão geral da operação</p></div><button onClick={()=>load(false)} disabled={loading} aria-label="Atualizar dados" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-none dark:bg-white dark:text-black"><RefreshCw size={17} className={loading?"animate-spin":""}/></button></header>{error&&<div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">{error}</div>}<section className="mt-8 rounded-[28px] bg-black p-6 text-white dark:bg-white dark:text-black sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-medium opacity-60">Faturamento hoje</p><p className="mt-3 text-[42px] font-semibold leading-none tracking-[-0.06em] sm:text-5xl">{loading?"...":money(revenue)}</p></div><CircleDollarSign size={25} strokeWidth={1.7} className="opacity-80"/></div><div className="mt-8 flex items-end justify-between gap-4"><div><p className="text-xs opacity-60">Meta diária</p><p className="mt-1 text-sm font-semibold">{cups} / {meta} copos</p></div><span className="text-xs font-semibold">{Math.round(progress)}%</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20 dark:bg-black/15"><div className="h-full rounded-full bg-white dark:bg-black" style={{width:`${progress}%`}}/></div></section><section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">{metrics.map(({label,value,note,Icon})=><div key={label} className="rounded-2xl bg-white p-4 dark:bg-[#080808] sm:p-5"><Icon size={18} strokeWidth={1.7} className="text-slate-500"/><p className="mt-5 text-[11px] font-medium text-slate-500">{label}</p><p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">{value}</p><p className="mt-1 text-[11px] text-slate-400">{note}</p></div>)}</section><section className="mt-4 rounded-2xl bg-white p-5 dark:bg-[#080808] sm:p-6"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-slate-500">Desempenho</p><h2 className="mt-1 text-lg font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">Vendas recentes</h2></div><Link href="/vendas" className="flex items-center gap-1 text-xs font-semibold text-slate-500">Ver tudo <ChevronRight size={14}/></Link></div><div className="mt-7 flex h-36 items-end gap-2 sm:h-44 sm:gap-3">{lastDays.map((d,i)=><div key={i} className="flex flex-1 flex-col items-center gap-2"><div className="w-full max-w-10 rounded-t-md bg-black dark:bg-white" style={{height:`${Math.max(5,d.cups/max*100)}%`}}/><span className="text-[10px] text-slate-400">{d.label}</span></div>)}</div></section><section className="mt-4 grid gap-3 sm:grid-cols-2"><Link href="/vendas" className="group rounded-2xl bg-white p-5 dark:bg-[#080808]"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Operação</p><p className="mt-1 font-semibold text-slate-900 dark:text-white">Registrar venda</p></div><span className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black"><Plus size={18}/></span></div></Link><Link href="/estoque" className="group rounded-2xl bg-white p-5 dark:bg-[#080808]"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Controle</p><p className="mt-1 font-semibold text-slate-900 dark:text-white">Ver estoque</p></div><span className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black"><ArrowUpRight size={18}/></span></div></section></div><MobileNav/></main>;
 }
