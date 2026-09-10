@@ -19,14 +19,21 @@ App para gestão de estoque, vendas, gastos e clima da **Degusty Açaí**.
 4. Rode o SQL em `supabase/schema.sql` no SQL Editor do Supabase
 5. `npm run dev`
 
-## Módulos planejados
+## Módulos
 - [x] Estrutura base
-- [ ] Dashboard
-- [ ] Estoque / Ciclos de estoque
-- [ ] Vendas diárias
-- [ ] Gastos / Situação financeira
-- [ ] Controle de clima
-- [ ] Metas e ponto de equilíbrio
+- [x] Dashboard
+- [x] Estoque / Ciclos de estoque
+- [x] Vendas diárias
+- [x] Gastos / Situação financeira
+- [x] Controle de clima
+- [x] Metas e ponto de equilíbrio
+- [x] Layout mobile-first
+- [x] Navegação inferior para celular
+- [ ] Integração completa das telas com Supabase
+- [ ] Autenticação
 
-## Notas
-Todas as evoluções são registradas no Notion (Contexto Compartilhado de LLM → Observações entre LLMs + página Degusty Açaí).
+## Interface mobile
+As telas operacionais foram adaptadas para uso prioritário em celular, incluindo navegação inferior, áreas de toque maiores, safe area para iPhone e grids responsivos.
+
+## Desenvolvimento
+Todas as evoluções devem ser registradas no Notion (Contexto Compartilhado de LLM → página Degusty Açaí) para manter o histórico do projeto entre sessões e assistentes.
