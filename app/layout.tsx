@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ThemeToggle from "./components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Degusty Açaí | Controle Operacional",
@@ -12,8 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className="min-h-screen antialiased">
+        <ThemeToggle />
+        {children}
+      </body>
     </html>
   );
 }
