@@ -3,16 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://zamcnogwjnxqwylltbuj.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ6YW1jbm9nd2pu eHE";
 
-async function resilientFetch(input: RequestInfo | URL, init?: RequestInit) {
-  try { return await fetch(input, init); }
-  catch (error) {
-    if (typeof navigator !== "undefined" && !navigator.onLine) throw error;
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return fetch(input, init);
-  }
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: resilientFetch } });
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Produto = { id:string; nome:string|null; qtd:number|null; custo:number|null; min:number|null; unidade:string|null; updated_at:string|null };
 export type Venda = { id:string; produto:string|null; quantidade:number|null; valor:number|null; data:string|null; observacao:string|null; created_at:string|null };
