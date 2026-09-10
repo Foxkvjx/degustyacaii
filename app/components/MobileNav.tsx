@@ -7,7 +7,7 @@ const items = [
   ["/dashboard", "Início", "⌂"],
   ["/vendas", "Vendas", "＋"],
   ["/estoque", "Estoque", "□"],
-  ["/gastos", "Gastos", "−"],
+  ["/receitas", "Receitas", "◈"],
   ["/calendario", "Agenda", "▣"],
 ];
 
