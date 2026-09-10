@@ -5,6 +5,13 @@ import ThemeToggle from "./components/ThemeToggle";
 export const metadata: Metadata = {
   title: "Degusty Açaí | Controle Operacional",
   description: "Estoque, vendas, gastos e clima — Degusty Açaí",
+  applicationName: "Degusty Açaí",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    title: "Degusty Açaí",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({
