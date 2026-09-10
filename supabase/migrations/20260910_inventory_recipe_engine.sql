@@ -39,7 +39,7 @@ create policy estoque_movimentacoes_public_all on public.estoque_movimentacoes f
 update public.produtos set qtd=qtd*1000, unidade='ml', min=min*1000 where lower(nome)='açaí' and unidade='litros';
 update public.produtos set custo=custo/1000 where lower(nome)='açaí' and unidade='ml' and custo>1;
 insert into public.receitas(nome,tipo,preco) values
-('Açaí 100ml','produto',5),('Açaí 300ml','produto',13),('Açaí 500ml','produto',18),
+('Açaí 100ml','produto',5),('Açaí 300ml','produto',14),('Açaí 500ml','produto',18),
 ('Banana','complemento',null),('Leite condensado','complemento',null),('Leite em pó','complemento',null)
 on conflict(nome) do update set tipo=excluded.tipo, preco=excluded.preco, updated_at=now();
 with r as(select id from public.receitas where nome='Açaí 100ml'),p as(select id from public.produtos where lower(nome)='açaí') insert into public.receita_itens(receita_id,insumo_id,quantidade) select r.id,p.id,100 from r,p on conflict(receita_id,insumo_id) do update set quantidade=excluded.quantidade;
