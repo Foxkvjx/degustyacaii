@@ -23,7 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <MutationSync />
           <SyncIndicator />
           {children}
-          <MobileNav persistent />
+          <MobileNav />
         </AuthGate>
       </body>
     </html>
