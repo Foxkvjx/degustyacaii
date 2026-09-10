@@ -1,4 +1,4 @@
-const PREFIX = "degusty:cache:v1:";
+const PREFIX = "degusty:cache:v2:";
 
 export function readCache<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
