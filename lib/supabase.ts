@@ -5,53 +5,61 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Types baseados no schema previsto
-export type ParametroNegocio = {
+export type Produto = {
   id: string;
-  chave: string;
-  valor: string;
-  descricao?: string;
-  updated_at: string;
+  nome: string | null;
+  qtd: number | null;
+  custo: number | null;
+  min: number | null;
+  unidade: string | null;
+  updated_at: string | null;
 };
 
-export type CicloEstoque = {
+export type Venda = {
   id: string;
-  data_inicio: string;
-  data_fim?: string;
-  litros_comprados: number;
-  custo_total: number;
-  status: "ativo" | "finalizado";
-  observacao?: string;
-  created_at: string;
-};
-
-export type VendaDiaria = {
-  id: string;
-  data: string;
-  quantidade_copos: number;
-  preco_unitario: number;
-  faturamento: number;
-  ponto_venda?: string;
-  observacao?: string;
-  created_at: string;
+  produto: string | null;
+  quantidade: number | null;
+  valor: number | null;
+  data: string | null;
+  observacao: string | null;
+  created_at: string | null;
 };
 
 export type Gasto = {
   id: string;
-  data: string;
-  categoria: string;
-  descricao: string;
-  valor: number;
-  created_at: string;
+  nome: string | null;
+  valor: number | null;
+  tipo: string | null;
+  data: string | null;
+  observacao: string | null;
+  created_at: string | null;
+};
+
+export type Config = {
+  id: string;
+  user_name: string | null;
+  negocio: string | null;
+  margem: number | null;
+  preco_copo: number | null;
+  meta_diaria: number | null;
+  updated_at: string | null;
 };
 
 export type RegistroClima = {
   id: string;
   data: string;
-  temperatura_max?: number;
-  temperatura_min?: number;
-  condicao?: string;
-  chuva: boolean;
-  observacao?: string;
-  created_at: string;
+  temperatura: number | null;
+  condicao: string | null;
+  umidade: number | null;
+  observacao: string | null;
+  created_at: string | null;
+};
+
+export type RegistroPonto = {
+  id: number;
+  data: string;
+  custo_total: number | null;
+  itens: unknown;
+  observacao: string | null;
+  created_at: string | null;
 };
