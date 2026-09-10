@@ -25,7 +25,7 @@ export default function MobileNav() {
               href={href}
               className={`flex min-h-14 flex-col items-center justify-center rounded-xl px-2 text-[11px] font-medium transition-colors ${
                 active
-                  ? "bg-slate-100 text-slate-900 dark:bg-[#0d0d0d] dark:text-white"
+                  ? "bg-white text-slate-900 dark:bg-white dark:text-black"
                   : "text-slate-500 dark:text-slate-500"
               }`}
             >
