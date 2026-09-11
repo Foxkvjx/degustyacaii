@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
@@ -8,13 +8,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("error") === "auth_callback") {
-      setMessage("Não foi possível concluir o login com Google. Tente novamente.");
-    }
-  }, []);
 
   async function handleLogin(event: FormEvent) {
     event.preventDefault();
@@ -35,49 +28,12 @@ export default function LoginPage() {
     setBusy(false);
   }
 
-  async function handleGoogle() {
-    setBusy(true);
-    setMessage("");
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    if (error) {
-      setMessage(error.message);
-      setBusy(false);
-      return;
-    }
-
-    // Keep the browser-side OAuth flow. Supabase handles the returned
-    // session in the browser, so a custom Next.js callback is not needed here.
-    if (data?.url) window.location.assign(data.url);
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-black">
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Entrar na Degusty</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Acesse seu painel de gestão.</p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={busy}
-          className="mb-4 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-white dark:hover:bg-slate-900"
-        >
-          {busy ? "Conectando ao Google..." : "Continuar com Google"}
-        </button>
-
-        <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
-          <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-          ou
-          <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
         </div>
 
         <form onSubmit={handleLogin} className="space-y-3">
