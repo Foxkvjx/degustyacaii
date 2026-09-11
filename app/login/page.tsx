@@ -38,16 +38,23 @@ export default function LoginPage() {
   async function handleGoogle() {
     setBusy(true);
     setMessage("");
-    const { error } = await supabase.auth.signInWithOAuth({
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/dashboard`,
       },
     });
+
     if (error) {
       setMessage(error.message);
       setBusy(false);
+      return;
     }
+
+    // Keep the browser-side OAuth flow. Supabase handles the returned
+    // session in the browser, so a custom Next.js callback is not needed here.
+    if (data?.url) window.location.assign(data.url);
   }
 
   return (
