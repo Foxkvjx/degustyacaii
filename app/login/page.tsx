@@ -35,42 +35,16 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Entrar na Degusty</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Acesse seu painel de gestão.</p>
         </div>
-
         <form onSubmit={handleLogin} className="space-y-3">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="E-mail"
-            className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:text-white"
-          />
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Senha"
-            className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:text-white"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
-          >
+          <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="E-mail" className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:text-white" />
+          <input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Senha" className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:text-white" />
+          <button type="submit" disabled={busy} className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black">
             {busy ? "Entrando..." : "Entrar"}
           </button>
         </form>
-
-        <button
-          type="button"
-          onClick={handleSignup}
-          disabled={busy}
-          className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
-        >
+        <button type="button" onClick={handleSignup} disabled={busy} className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
           Criar conta
         </button>
-
         {message && <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">{message}</p>}
       </section>
     </main>
