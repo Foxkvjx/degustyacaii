@@ -12,7 +12,27 @@ export const metadata: Metadata = {
   description: "Estoque, vendas, gastos e clima — Degusty Açaí",
   applicationName: "Degusty Açaí",
   themeColor: "#000000",
-  appleWebApp: { capable: true, title: "Degusty Açaí", statusBarStyle: "black-translucent" },
+  appleWebApp: {
+    capable: true,
+    title: "Degusty Açaí",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/icon-512.png",
+      },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
