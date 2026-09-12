@@ -16,7 +16,28 @@ export default function Gastos(){
  const cachedGastos=readCache<Gasto[]>(GASTOS_CACHE,[]),cachedVendas=readCache<{valor:number}[]>(VENDAS_CACHE,[]);
  const [gastos,setGastos]=useState<Gasto[]>(cachedGastos),[vendas,setVendas]=useState<number[]>(cachedVendas.map(v=>Number(v.valor))),[loading,setLoading]=useState(cachedGastos.length===0),[clearing,setClearing]=useState(false),[error,setError]=useState<string|null>(null);
  const [form,setForm]=useState(emptyForm());
- async function load(silent=true){if(!silent)setLoading(true);setError(null);const [g,s]=await Promise.all([supabase.from("gastos").select("id,nome,valor,tipo,data,observacao").order("data",{ascending:false}).limit(100),supabase.from("vendas").select("valor").limit(500)]);if(g.error||s.error)setError(g.error?.message||s.error?.message||"Erro ao carregar dados");else{const nextG=(g.data??[])as Gasto[];const nextV=(s.data??[]).map(x=>Number(x.valor));setGastos(nextG);setVendas(nextV);writeCache(GASTOS_CACHE,nextG);writeCache(VENDAS_CACHE,nextV.map(valor=>({valor})))}if(!silent)setLoading(false)}
+ async function load(silent=true){
+  if(!silent)setLoading(true);
+  setError(null);
+  try{
+   const [g,s]=await Promise.all([
+    supabase.from("gastos").select("id,nome,valor,tipo,data,observacao").order("data",{ascending:false}).limit(100),
+    supabase.from("vendas").select("valor").limit(500)
+   ]);
+   if(g.error||s.error){
+    setError(g.error?.message||s.error?.message||"Erro ao carregar dados");
+   }else{
+    const nextG=(g.data??[])as Gasto[];
+    const nextV=(s.data??[]).map(x=>Number(x.valor));
+    setGastos(nextG);setVendas(nextV);
+    writeCache(GASTOS_CACHE,nextG);writeCache(VENDAS_CACHE,nextV.map(valor=>({valor})));
+   }
+  }catch(err){
+   setError(err instanceof Error?err.message:"Erro ao carregar dados");
+  }finally{
+   setLoading(false);
+  }
+ }
  useEffect(()=>{void load(true)},[]);
  function add(e:React.FormEvent){e.preventDefault();setError(null);const valor=Number(form.valor);if(!form.nome.trim()||!Number.isFinite(valor)||valor<=0||!form.data){setError("Preencha descrição, valor e data corretamente.");return}const payload={id:crypto.randomUUID(),nome:form.nome.trim(),valor,tipo:form.tipo.trim()||"Operacional",data:form.data,observacao:form.observacao.trim()||null};setGastos(prev=>{const next=[payload as Gasto,...prev].sort((a,b)=>b.data.localeCompare(a.data));writeCache(GASTOS_CACHE,next);return next});setForm(emptyForm());queueMutation({table:"gastos",action:"insert",payload});}
  function clearAll(){if(gastos.length===0)return;if(!window.confirm("Tem certeza que deseja limpar todos os gastos? Essa ação não pode ser desfeita."))return;setClearing(true);setError(null);const previous=gastos;setGastos([]);writeCache(GASTOS_CACHE,[]);previous.forEach(g=>queueMutation({table:"gastos",action:"delete",match:{column:"id",value:g.id}}));setClearing(false)}
