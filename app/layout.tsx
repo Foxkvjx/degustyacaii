@@ -5,6 +5,7 @@ import MutationSync from "./components/MutationSync";
 import SyncIndicator from "./components/SyncIndicator";
 import MobileNav from "./components/MobileNav";
 import AuthGate from "./components/AuthGate";
+import PreventZoom from "./components/PreventZoom";
 
 export const metadata: Metadata = {
   title: "Degusty Açaí | Controle Operacional",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
+        <PreventZoom />
         <ThemeToggle />
         <AuthGate>
           <MutationSync />
