@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeToggle from "./components/ThemeToggle";
 import MutationSync from "./components/MutationSync";
@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   applicationName: "Degusty Açaí",
   themeColor: "#000000",
   appleWebApp: { capable: true, title: "Degusty Açaí", statusBarStyle: "black-translucent" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
