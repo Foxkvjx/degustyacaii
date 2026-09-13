@@ -17,14 +17,6 @@ export const metadata: Metadata = {
     title: "Degusty Açaí",
     statusBarStyle: "black-translucent",
   },
-  icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-  },
 };
 
 export const viewport: Viewport = {
