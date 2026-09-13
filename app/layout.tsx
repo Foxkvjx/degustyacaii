@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   description: "Estoque, vendas, gastos e clima — Degusty Açaí",
   applicationName: "Degusty Açaí",
   themeColor: "#000000",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   appleWebApp: {
     capable: true,
     title: "Degusty Açaí",
